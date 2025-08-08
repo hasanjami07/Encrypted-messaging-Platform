@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int     @id @default(autoincrement())
+  name      String
+  email     String  @unique
+  password  String
+  role      String  @default("user") // user, moderator, admin
+  isBlocked Boolean @default(false)
+
+  // Relation fields for contacts
+  contacts  Contact[] @relation("OwnerContacts") // Contacts this user owns
+  contactOf Contact[] @relation("ContactOwners") // Contacts where this user is the contact
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Contact {
+  id        Int @id @default(autoincrement())
+  ownerId   Int
+  contactId Int
+
+  owner   User @relation("OwnerContacts", fields: [ownerId], references: [id])
+  contact User @relation("ContactOwners", fields: [contactId], references: [id])
+
+  createdAt DateTime @default(now())
+}
