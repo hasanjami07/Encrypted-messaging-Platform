@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Simple Auth Frontend</title>
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+</head>
+<body>
+  <h1>Register</h1>
+  <form id="registerForm">
+    <input type="text" id="regName" placeholder="Name" required /><br />
+    <input type="email" id="regEmail" placeholder="Email" required /><br />
+    <input type="password" id="regPassword" placeholder="Password" required /><br />
+    <button type="submit">Register</button>
+  </form>
+
+  <h1>Login</h1>
+  <form id="loginForm">
+    <input type="email" id="loginEmail" placeholder="Email" required /><br />
+    <input type="password" id="loginPassword" placeholder="Password" required /><br />
+    <button type="submit">Login</button>
+  </form>
+
+  <h2>Token</h2>
+  <pre id="tokenDisplay"></pre>
+  
+  <div id="chat" style="display:none;">
+    <h2>Chat Room</h2>
+    <div id="messages" style="border:1px solid #ccc; height:200px; overflow-y:scroll; padding:10px;"></div>
+    <input type="text" id="messageInput" placeholder="Type your message..." />
+    <button id="sendBtn">Send</button>
+  </div>
+  <script>
+    const API_BASE = "http://localhost:8000/api";
+
+    // Register handler
+    document.getElementById("registerForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("regName").value;
+      const email = document.getElementById("regEmail").value;
+      const password = document.getElementById("regPassword").value;
+
+      try {
+        const res = await fetch(`${API_BASE}/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, password }),
+        });
+
+        const data = await res.json();
+        alert(data.message || "Registered successfully");
+      } catch (err) {
+        alert("Registration failed");
+      }
+    });
+
+    // Login handler
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("loginEmail").value;
+      const password = document.getElementById("loginPassword").value;
+
+      try {
+        const res = await fetch(`${API_BASE}/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await res.json();
+
+        if (data.token) {
+          document.getElementById("tokenDisplay").textContent = data.token;
+          alert("Logged in successfully!");
+        } else {
+          alert(data.message || "Login failed");
+        }
+      } catch (err) {
+        alert("Login error");
+      }
+    });
+    
+    
+
+  
+  
+    // Connect to Socket.io server (adjust URL if needed)
+      const socket = io("http://localhost:YOUR_PORT_HERE");
+
+      const chatDiv = document.getElementById("chat");
+      const messagesDiv = document.getElementById("messages");
+      const messageInput = document.getElementById("messageInput");
+      const sendBtn = document.getElementById("sendBtn");
+
+    // Example: Show chat UI after login/register - you can hook this to your actual auth flow
+    // For now, just show it for demo purposes
+    chatDiv.style.display = "block";
+
+    sendBtn.addEventListener("click", () => {
+      const message = messageInput.value.trim();
+      if (message === "") return;
+    
+      // Send message to server
+      socket.emit("sendMessage", {
+        senderId: 1,      // replace with actual logged in user ID
+        groupId: 1,       // replace with actual group ID or null
+        text: message
+      });
+
+      messageInput.value = "";
+    });
+
+    // Listen for new messages from server
+    socket.on("newMessage", (msg) => {
+      const messageElem = document.createElement("div");
+      messageElem.textContent = `User ${msg.senderId}: ${msg.content}`;
+      messagesDiv.appendChild(messageElem);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto scroll
+    });
+  </script>
+</body>
+</html>

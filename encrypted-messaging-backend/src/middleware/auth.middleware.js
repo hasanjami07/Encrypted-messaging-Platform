@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 
-module.exports = (req, res, next) => {
+const verifyToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];
   if (!authHeader) return res.status(401).json({ message: "Unauthorized" });
 
@@ -9,10 +9,12 @@ module.exports = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.userId = decoded.userId;
+    req.userId = decoded.id;   // use the same key you signed token with, likely 'id' or 'userId'
     req.userRole = decoded.role;
     next();
   } catch {
     res.status(401).json({ message: "Invalid token" });
   }
 };
+
+module.exports = { verifyToken };

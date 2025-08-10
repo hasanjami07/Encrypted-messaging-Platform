@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Simple Auth Frontend</title>
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f4f7f9;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+
+  #chatContainer {
+    width: 400px;
+    height: 600px;
+    background: white;
+    box-shadow: 0 4px 10px rgb(0 0 0 / 0.1);
+    display: flex;
+    flex-direction: column;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  #chatHeader {
+    background-color: #4a90e2;
+    color: white;
+    padding: 15px;
+    font-size: 1.2rem;
+    text-align: center;
+  }
+
+  #messages {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .message {
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .message .sender {
+    font-weight: 600;
+    margin-bottom: 3px;
+    color: #333;
+  }
+
+  .message .text {
+    background: #e1e8f7;
+    padding: 10px 15px;
+    border-radius: 20px;
+    max-width: 75%;
+    font-size: 0.95rem;
+  }
+
+  .message.self .text {
+    background: #4a90e2;
+    color: white;
+    align-self: flex-end;
+  }
+
+  #inputArea {
+    display: flex;
+    padding: 10px 15px;
+    background: #f1f3f6;
+  }
+
+  #messageInput {
+    flex: 1;
+    padding: 10px 15px;
+    border-radius: 20px;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+    outline: none;
+  }
+
+  #sendBtn {
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    padding: 0 20px;
+    margin-left: 10px;
+    border-radius: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  #sendBtn:hover {
+    background-color: #357ABD;
+  }
+</style>
+
+</head>
+<body>
+  <h1>Register</h1>
+  <form id="registerForm">
+    <input type="text" id="regName" placeholder="Name" required /><br />
+    <input type="email" id="regEmail" placeholder="Email" required /><br />
+    <input type="password" id="regPassword" placeholder="Password" required /><br />
+    <button type="submit">Register</button>
+  </form>
+
+  <h1>Login</h1>
+  <form id="loginForm">
+    <input type="email" id="loginEmail" placeholder="Email" required /><br />
+    <input type="password" id="loginPassword" placeholder="Password" required /><br />
+    <button type="submit">Login</button>
+  </form>
+
+  <h2>Token</h2>
+  <pre id="tokenDisplay"></pre>
+  
+  <div id="chatContainer">
+    <div id="chatHeader">Simple Chat Room</div>
+    <div id="messages"></div>
+
+    <div id="inputArea">
+      <input
+        id="messageInput"
+        type="text"
+        placeholder="Type your message here..."
+        autocomplete="off"
+      />
+      <button id="sendBtn">Send</button>
+    </div>
+  </div>
+  <script>
+    const API_BASE = "http://localhost:8000/api";
+
+    // Register handler
+    document.getElementById("registerForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("regName").value;
+      const email = document.getElementById("regEmail").value;
+      const password = document.getElementById("regPassword").value;
+
+      try {
+        const res = await fetch(`${API_BASE}/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, password }),
+        });
+
+        const data = await res.json();
+        alert(data.message || "Registered successfully");
+      } catch (err) {
+        alert("Registration failed");
+      }
+    });
+
+    // Login handler
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("loginEmail").value;
+      const password = document.getElementById("loginPassword").value;
+
+      try {
+        const res = await fetch(`${API_BASE}/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await res.json();
+
+        if (data.token) {
+          document.getElementById("tokenDisplay").textContent = data.token;
+          alert("Logged in successfully!");
+        } else {
+          alert(data.message || "Login failed");
+        }
+      } catch (err) {
+        alert("Login error");
+      }
+    });
+    
+    
+
+  
+  
+    // Connect to Socket.io server (adjust URL and port)
+    const socket = io("http://localhost:YOUR_PORT_HERE"); // <-- Change your backend URL/port here
+
+    const messagesDiv = document.getElementById("messages");
+    const messageInput = document.getElementById("messageInput");
+    const sendBtn = document.getElementById("sendBtn");
+
+    // Replace with your actual logged in user ID
+    const currentUserId = 1; 
+
+    // Send message event
+    function sendMessage() {
+      const text = messageInput.value.trim();
+      if (!text) return;
+
+      // Emit sendMessage event to backend
+      socket.emit("sendMessage", {
+        senderId: currentUserId,
+        groupId: 1, // Replace with actual groupId if applicable
+        text,
+      });
+
+      messageInput.value = "";
+    }
+
+    sendBtn.addEventListener("click", sendMessage);
+    messageInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
+
+    // Display incoming message
+    socket.on("newMessage", (msg) => {
+      const messageElem = document.createElement("div");
+      messageElem.classList.add("message");
+
+      // Add 'self' class if current user sent the message
+      if (msg.senderId === currentUserId) {
+        messageElem.classList.add("self");
+      }
+
+      messageElem.innerHTML = `
+        <div class="sender">User ${msg.senderId}</div>
+        <div class="text">${msg.content}</div>
+      `;
+
+      messagesDiv.appendChild(messageElem);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto scroll
+    });
+  </script>
+</body>
+</html>

@@ -33,3 +33,12 @@ model Contact {
 
   createdAt DateTime @default(now())
 }
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  senderId  Int
+  groupId   Int?
+  content   String
+  iv        String
+  createdAt DateTime @default(now())
+}

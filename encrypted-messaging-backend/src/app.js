@@ -4,6 +4,8 @@ const express = require('express');
 const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
 const { PrismaClient } = require('@prisma/client');
+const messageRoutes = require("./routes/messageRoutes");
+
 
 const app = express();
 const prisma = new PrismaClient();
@@ -14,6 +16,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use("/api", messageRoutes);
 
 // Test route
 app.get('/', (req, res) => {
@@ -21,7 +24,10 @@ app.get('/', (req, res) => {
 });
 
 // Server
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);
 });
+
+
+module.exports = app;
