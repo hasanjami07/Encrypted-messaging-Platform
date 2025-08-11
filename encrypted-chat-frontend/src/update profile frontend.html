@@ -1,0 +1,29 @@
+<h2>Profile Information</h2>
+<button id="viewProfileBtn">View Profile</button>
+<pre id="profileData"></pre>
+
+<h3>Update Profile</h3>
+<input id="name" placeholder="Name"><br>
+<input id="username" placeholder="Username"><br>
+<input id="email" type="email" placeholder="Email"><br>
+<input id="status_text" placeholder="Status"><br>
+<input id="profile_pic" placeholder="Profile Pic URL"><br>
+
+<h4>Change Role</h4>
+<button onclick="setRole('User')">User</button>
+<button onclick="setRole('Admin')">Admin</button>
+<button onclick="setRole('Moderator')">Moderator</button>
+<p>Selected Role: <span id="selectedRole">None</span></p>
+
+<button id="updateProfileBtn">Update Profile</button>
+
+<h3>Reset Password</h3>
+<input id="oldPassword" type="password" placeholder="Old Password"><br>
+<input id="newPassword" type="password" placeholder="New Password"><br>
+<button id="resetPasswordBtn">Reset Password</button>
+
+<script>
+  function setRole(role) {
+    document.getElementById('selectedRole').innerText = role;
+  }
+</script>
