@@ -16,6 +16,7 @@ if (!secret) {
   throw new Error("ENCRYPTION_SECRET is not defined in .env");
 }
 
+
 const key = crypto.scryptSync(secret, "salt", 32);
 
 // Register routes before starting server
@@ -39,6 +40,11 @@ io.on("connection", (socket) => {
     socket.join(`group-${groupId}`);
     console.log(`Socket ${socket.id} joined group-${groupId}`);
   });
+  socket.on('identify', (userId) => {
+    // client should emit 'identify' with their userId after connection/auth
+    socket.join(`user-${userId}`);
+  });
+
 
   socket.on("sendMessage", async ({ senderId, groupId, text }) => {
     try {
@@ -67,6 +73,10 @@ io.on("connection", (socket) => {
     console.log("Client disconnected:", socket.id);
   });
 });
+
+// import scheduler and start it
+const { startScheduler } = require('./jobs/scheduler');
+startScheduler(io);
 
 // Start the server
 server.listen(PORT, () => {

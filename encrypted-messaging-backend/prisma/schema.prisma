@@ -1,44 +1,86 @@
 generator client {
   provider = "prisma-client-js"
+  previewfeatures = ["mongodb"]
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id        Int     @id @default(autoincrement())
-  name      String
-  email     String  @unique
-  password  String
-  role      String  @default("user") // user, moderator, admin
-  isBlocked Boolean @default(false)
+  id            String    @id @map("_id") @default(auto()) @db.ObjectId
+  name          String
+  email         String    @unique
+  password      String
+  role          String    @default("user")
+  isBlocked     Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  // Relation fields for contacts
-  contacts  Contact[] @relation("OwnerContacts") // Contacts this user owns
-  contactOf Contact[] @relation("ContactOwners") // Contacts where this user is the contact
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  // NOTE: For contacts we store explicit ownerId/contactId (see Contact model)
 }
 
 model Contact {
-  id        Int @id @default(autoincrement())
-  ownerId   Int
-  contactId Int
-
-  owner   User @relation("OwnerContacts", fields: [ownerId], references: [id])
-  contact User @relation("ContactOwners", fields: [contactId], references: [id])
-
+  id        String   @id @map("_id") @default(auto()) @db.ObjectId
+  ownerId   String   @db.ObjectId
+  contactId String   @db.ObjectId
   createdAt DateTime @default(now())
 }
 
 model Message {
-  id        Int      @id @default(autoincrement())
-  senderId  Int
-  groupId   Int?
-  content   String
-  iv        String
+  id           String   @id @map("_id") @default(auto()) @db.ObjectId
+  senderId     String   @db.ObjectId
+  receiverId   String?  @db.ObjectId    // for 1:1 chats (nullable)
+  groupId      String?  @db.ObjectId    // for group messages (nullable)
+  content      String
+  contentLower String?                 // optional: store lowercase copy to enable case-insensitive search
+  iv           String?                 // for encryption iv
+  isUrgent     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
+
+model Group {
+  id        String   @id @map("_id") @default(auto()) @db.ObjectId
+  name      String
+  createdBy String   @db.ObjectId
   createdAt DateTime @default(now())
+}
+
+model GroupMember {
+  id        String   @id @map("_id") @default(auto()) @db.ObjectId
+  groupId   String   @db.ObjectId
+  userId    String   @db.ObjectId
+  joinedAt  DateTime @default(now())
+}
+
+model SecurityLog {
+  id        String   @id @map("_id") @default(auto()) @db.ObjectId
+  userId    String?  @db.ObjectId
+  eventType String
+  detail    String?
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @map("_id") @default(auto()) @db.ObjectId
+  userId    String   @db.ObjectId
+  type      String
+  data      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model ScheduledMessage {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  senderId      String
+  recipientId   String         // single user recipient (you can extend to groupId if needed)
+  encryptedText String         // encrypted message content
+  iv            String         // iv used to encrypt
+  scheduledFor  DateTime
+  isRecurring   Boolean  @default(false)
+  recurringType String?        // "daily" | "weekly" | "monthly"
+  status        String   @default("pending") // "pending", "sent", "failed"
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }

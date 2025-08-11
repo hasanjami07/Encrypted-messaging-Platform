@@ -1,6 +1,7 @@
+// Example of verifyToken middleware
 const jwt = require("jsonwebtoken");
 
-const verifyToken = (req, res, next) => {
+function verifyToken(req, res, next) {
   const authHeader = req.headers["authorization"];
   if (!authHeader) return res.status(401).json({ message: "Unauthorized" });
 
@@ -9,12 +10,12 @@ const verifyToken = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.userId = decoded.id;   // use the same key you signed token with, likely 'id' or 'userId'
-    req.userRole = decoded.role;
+    req.userId = decoded.id; // or decoded.userId based on your token
     next();
-  } catch {
+  } catch (err) {
     res.status(401).json({ message: "Invalid token" });
   }
-};
+}
 
 module.exports = { verifyToken };
+
