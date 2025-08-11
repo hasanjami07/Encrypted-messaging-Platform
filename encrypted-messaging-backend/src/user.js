@@ -1,15 +1,37 @@
-const mongoose = require ('mongoose');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
-const userSchema = new mongoose.Schema({
-  name: String,
-  email: { type: String, unique: true },
-  username: { type: String, unique: true },
-  password: String,
-  role: { type: String, enum: ['user', 'moderator', 'admin'], default: 'user' },
-  isBlocked: { type: Boolean, default: false },
-  profilePic: String,
-  statusText: { type: String, default: 'Hey there! I am using EncryptedApp' },
-  twoFactorEnabled: { type: Boolean, default: false }
-}, { timestamps: true });
+exports.getUserById = (id) => {
+  return prisma.user.findUnique({
+    where: { id },
+    select: { id: true, name: true, username: true, email: true, profilePic: true, statusText: true, role: true, isBlocked: true }
+  });
+};
 
-module.exports = mongoose.model('User', userSchema);
+exports.updateUser = (id, data) => {
+  return prisma.user.update({
+    where: { id },
+    data
+  });
+};
+
+exports.changeRole = (userId, role) => {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { role }
+  });
+};
+
+exports.toggleBlock = (userId, isBlocked) => {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { isBlocked }
+  });
+};
+
+exports.resetPassword = async (userId, hashedPassword) => {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { password: hashedPassword }
+  });
+};
