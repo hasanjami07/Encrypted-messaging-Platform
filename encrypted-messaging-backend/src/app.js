@@ -7,6 +7,7 @@ const { PrismaClient } = require('@prisma/client');
 const messageRoutes = require("./routes/messageRoutes");
 const scheduledRoutes = require('./routes/scheduledRoutes');
 const contactRoutes = require("./routes/contactRoutes");
+const userRoutes = require("./routes/user.routes");
 require('dotenv').config();
 
 
@@ -22,6 +23,7 @@ app.use('/api/auth', authRoutes);
 app.use("/api", messageRoutes);
 app.use("/api/contacts", contactRoutes);
 app.use('/api/scheduled', scheduledRoutes);
+app.use("/api/user", userRoutes);
 // Test route
 app.get('/', (req, res) => {
   res.send('Encrypted Messaging Backend is running!');
