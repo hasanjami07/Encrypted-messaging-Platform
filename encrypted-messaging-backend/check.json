@@ -1,0 +1,152 @@
+{
+  "info": {
+    "name": "User Management API",
+    "_postman_id": "c9f8a1b5-1d3c-4a92-8b8f-0dabc1234567",
+    "description": "API requests for user profile management, role editing, blocking/unblocking, and password reset",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "View Profile",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/api/user/profile",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "user", "profile"]
+        }
+      }
+    },
+    {
+      "name": "Update Profile",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Saima Labonno\",\n  \"username\": \"saimalab\",\n  \"email\": \"saima@example.com\",\n  \"statusText\": \"Busy working on projects\",\n  \"profilePic\": \"https://example.com/newprofile.jpg\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/user/profile",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "user", "profile"]
+        }
+      }
+    },
+    {
+      "name": "Edit User Role",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": 2,\n  \"role\": \"Moderator\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/user/role",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "user", "role"]
+        }
+      }
+    },
+    {
+      "name": "Block / Unblock User",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": 3,\n  \"isBlocked\": true\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/user/block",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "user", "block"]
+        }
+      }
+    },
+    {
+      "name": "Force Password Reset",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": 4,\n  \"newPassword\": \"NewSecurePassword123\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/user/force-password-reset",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "user", "force-password-reset"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "token",
+      "value": ""
+    }
+  ]
+}
