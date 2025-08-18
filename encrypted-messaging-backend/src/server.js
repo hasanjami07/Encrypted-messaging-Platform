@@ -2,7 +2,7 @@ require("dotenv").config();
 const http = require("http");
 const crypto = require("crypto");
 const { Server } = require("socket.io");
-
+const userRoutes = require("./routes/user.routes");
 const app = require("./app");
 const messageRoutes = require("./routes/messageRoutes");
 const { encrypt } = require("./utils/encryption");
@@ -31,6 +31,8 @@ const io = new Server(server, {
   },
 });
 
+app.use("/api/users", userRoutes);
+
 // --- SOCKET.IO EVENTS ---
 io.on("connection", (socket) => {
   console.log("New client connected:", socket.id);
@@ -44,28 +46,31 @@ io.on("connection", (socket) => {
     socket.join(`user-${userId}`);
   });
 
-  socket.on("sendMessage", async ({ senderId, groupId, text }) => {
-    try {
-      const { iv, encryptedData } = encrypt(text);
+socket.on("sendMessage", async ({ senderId, receiverId, groupId, text }) => {
+  try {
+    const message = await prisma.message.create({
+      data: {
+        senderId,
+        receiverId: receiverId || null,
+        groupId: groupId || null,
+        content: text,
+      },
+    });
 
-      const message = await prisma.message.create({
-        data: {
-          senderId: Number(senderId),
-          groupId: groupId ? Number(groupId) : null,
-          content: encryptedData,
-          iv,
-        },
-      });
-
-      io.to(`group-${groupId}`).emit("newMessage", {
-        ...message,
-        content: text, // decrypted text for UI
-      });
-    } catch (error) {
-      console.error("Error sending message:", error);
-      socket.emit("error", { message: "Failed to send message" });
+    if (groupId) {
+      io.to(`group-${groupId}`).emit("newMessage", message);
+    } else if (receiverId) {
+      io.to(`user-${receiverId}`).emit("newMessage", message);
+      io.to(`user-${senderId}`).emit("newMessage", message);
     }
-  });
+  } catch (err) {
+    console.error("Failed to send message:", err);
+  }
+});
+
+socket.on("identify", (userId) => {
+  socket.join(`user-${userId}`);
+});
 
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
