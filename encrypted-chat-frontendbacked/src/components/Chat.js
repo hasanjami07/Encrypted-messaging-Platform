@@ -6,19 +6,33 @@ const BACKEND_URL = "http://localhost:8000"; // fixed backend URL
 
 export default function Chat({ user }) {
   const [groups, setGroups] = useState([]);
+  const [contacts, setContacts] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
-  const [message, setMessage] = useState("");
+  const [selectedContact, setSelectedContact] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [message, setMessage] = useState("");
   const [socket, setSocket] = useState(null);
 
+  // Fetch contacts
+  useEffect(() => {
+    async function fetchContacts() {
+      try {
+        const res = await api.get(`/contacts/${user.id}`);
+        setContacts(res.data.contacts);
+      } catch (err) {
+        console.error("Failed to fetch contacts:", err);
+      }
+    }
+    fetchContacts();
+  }, [user.id]);
+
+  // Fetch groups and initialize socket
   useEffect(() => {
     async function init() {
       try {
-        // Fetch user's groups
         const res = await api.get(`/groups/my-groups/${user.id}`);
         setGroups(res.data.map((g) => g.group));
 
-        // Initialize socket.io
         const s = io(BACKEND_URL);
         setSocket(s);
       } catch (err) {
@@ -28,36 +42,69 @@ export default function Chat({ user }) {
     init();
   }, [user.id]);
 
-  // Listen for new messages
+  // Listen for incoming messages
   useEffect(() => {
-    if (!socket || !selectedGroup) return;
+  if (!socket) return;
 
+  if (selectedGroup) {
     socket.emit("joinGroup", selectedGroup.id);
+  } else if (selectedContact) {
+    socket.emit("joinUser", selectedContact.id); // join 1:1 room
+  }
 
-    const handler = (msg) => {
-      if (msg.groupId === selectedGroup.id) setMessages((prev) => [...prev, msg]);
-    };
+  const handler = (msg) => {
+    const isDM = selectedContact && msg.senderId === selectedContact.id;
+    const isGroupMsg = selectedGroup && msg.groupId === selectedGroup.id;
 
-    socket.on("newMessage", handler);
-    return () => socket.off("newMessage", handler);
-  }, [socket, selectedGroup]);
-
-  const sendMessage = () => {
-    if (!message || !selectedGroup || !socket) return;
-
-    socket.emit("sendMessage", {
-      senderId: user.id,
-      groupId: selectedGroup.id,
-      text: message,
-    });
-
-    setMessage("");
+    if (isDM || isGroupMsg) setMessages((prev) => [...prev, msg]);
   };
+
+  socket.on("newMessage", handler);
+
+  return () => socket.off("newMessage", handler);
+  }, [socket, selectedGroup, selectedContact]);
+
+
+  // Send message
+  const sendMessage = () => {
+  if (!message || !socket) return;
+
+  const payload = {
+    senderId: user.id,
+    text: message,
+  };
+
+  if (selectedGroup) payload.groupId = selectedGroup.id;
+  if (selectedContact) payload.receiverId = selectedContact.id;
+
+  socket.emit("sendMessage", payload);
+  setMessage("");
+  };
+
 
   return (
     <div style={{ display: "flex", height: "100vh" }}>
-      {/* Groups sidebar */}
-      <div style={{ width: "250px", borderRight: "1px solid gray", padding: "10px" }}>
+      {/* Sidebar: Contacts + Groups */}
+      <div style={{ width: "250px", borderRight: "1px solid gray", padding: "10px", overflowY: "auto" }}>
+        <h3>Direct Messages</h3>
+        {contacts.map((c) => (
+          <div
+            key={c.id}
+            style={{
+              padding: "5px",
+              cursor: "pointer",
+              backgroundColor: selectedContact?.id === c.id ? "#ddd" : "transparent",
+            }}
+            onClick={() => {
+              setSelectedContact(c);
+              setSelectedGroup(null);
+              setMessages([]);
+            }}
+          >
+            {c.name}
+          </div>
+        ))}
+
         <h3>Groups</h3>
         {groups.map((g) => (
           <div
@@ -69,6 +116,7 @@ export default function Chat({ user }) {
             }}
             onClick={() => {
               setSelectedGroup(g);
+              setSelectedContact(null);
               setMessages([]);
             }}
           >
@@ -79,9 +127,22 @@ export default function Chat({ user }) {
 
       {/* Chat area */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "10px" }}>
-        <h3>{selectedGroup ? selectedGroup.name : "Select a group"}</h3>
+        <h3>
+          {selectedGroup
+            ? selectedGroup.name
+            : selectedContact
+            ? selectedContact.name
+            : "Select a chat"}
+        </h3>
+
         <div
-          style={{ flex: 1, border: "1px solid #ccc", padding: "10px", overflowY: "auto" }}
+          style={{
+            flex: 1,
+            border: "1px solid #ccc",
+            padding: "10px",
+            overflowY: "auto",
+            marginBottom: "10px",
+          }}
         >
           {messages.map((msg, i) => (
             <div key={i}>
@@ -89,13 +150,14 @@ export default function Chat({ user }) {
             </div>
           ))}
         </div>
-        {selectedGroup && (
-          <div style={{ display: "flex", marginTop: "10px" }}>
+
+        {(selectedGroup || selectedContact) && (
+          <div style={{ display: "flex" }}>
             <input
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              style={{ flex: 1, padding: "5px" }}
               placeholder="Type a message..."
+              style={{ flex: 1, padding: "5px" }}
             />
             <button onClick={sendMessage} style={{ marginLeft: "5px", padding: "5px 10px" }}>
               Send

@@ -2,14 +2,14 @@ import React, { useState } from "react";
 import api from "../utils/api";
 
 export default function Register() {
-  const [form, setForm] = useState({ username: "", email: "", password: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.post("/auth/register", form);
+      await api.post("/api/auth/register", form);
       alert("Registered successfully! You can now login.");
-      setForm({ username: "", email: "", password: "" });
+      setForm({ name: "", email: "", password: "" });
     } catch (err) {
       console.error(err);
       alert("Error: " + (err.response?.data?.error || err.message));
@@ -20,9 +20,9 @@ export default function Register() {
     <form onSubmit={handleSubmit} style={{ maxWidth: "400px", margin: "auto", padding: "20px" }}>
       <h2>Register</h2>
       <input
-        placeholder="Username"
-        value={form.username}
-        onChange={(e) => setForm({ ...form, username: e.target.value })}
+        placeholder="name"
+        value={form.name}
+        onChange={(e) => setForm({ ...form, name: e.target.value })}
         style={{ display: "block", width: "100%", marginBottom: "10px", padding: "8px" }}
       />
       <input
