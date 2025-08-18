@@ -8,31 +8,30 @@ const messageRoutes = require("./routes/messageRoutes");
 const { encrypt } = require("./utils/encryption");
 const prisma = require("./prismaClient");
 
-
-
+// Environment setup
 const PORT = process.env.PORT || 8000;
 const secret = process.env.ENCRYPTION_SECRET;
 if (!secret) {
   throw new Error("ENCRYPTION_SECRET is not defined in .env");
 }
 
-
 const key = crypto.scryptSync(secret, "salt", 32);
 
 // Register routes before starting server
 app.use("/api", messageRoutes);
 
-// Create HTTP server from Express app
+// Create HTTP server
 const server = http.createServer(app);
 
-// Initialize socket.io with CORS if needed
+// Initialize socket.io
 const io = new Server(server, {
   cors: {
-    origin: "*", // adjust in prod for security
+    origin: "*", // in production set to your frontend URL
     methods: ["GET", "POST"],
   },
 });
 
+// --- SOCKET.IO EVENTS ---
 io.on("connection", (socket) => {
   console.log("New client connected:", socket.id);
 
@@ -40,11 +39,10 @@ io.on("connection", (socket) => {
     socket.join(`group-${groupId}`);
     console.log(`Socket ${socket.id} joined group-${groupId}`);
   });
-  socket.on('identify', (userId) => {
-    // client should emit 'identify' with their userId after connection/auth
+
+  socket.on("identify", (userId) => {
     socket.join(`user-${userId}`);
   });
-
 
   socket.on("sendMessage", async ({ senderId, groupId, text }) => {
     try {
@@ -61,7 +59,7 @@ io.on("connection", (socket) => {
 
       io.to(`group-${groupId}`).emit("newMessage", {
         ...message,
-        content: text, // decrypted text for immediate display
+        content: text, // decrypted text for UI
       });
     } catch (error) {
       console.error("Error sending message:", error);
@@ -74,19 +72,32 @@ io.on("connection", (socket) => {
   });
 });
 
-// import scheduler and start it
-const { startScheduler } = require('./jobs/scheduler');
+// Start scheduler
+const { startScheduler } = require("./jobs/scheduler");
 startScheduler(io);
 
-// Start the server
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-}).on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
+// Backend config for frontend (always points to port 8000)
+app.get("/backend-config", (req, res) => {
+  res.json({ backendUrl: `http://localhost:${PORT}` });
+});
+
+// --- START SERVER ---
+// Ensure ONLY port 8000 is used, no random fallback
+// Start the server with reuseAddress to avoid TIME_WAIT issues
+server.listen(
+  { port: PORT, host: "0.0.0.0", reuseAddress: true },
+  () => {
+    console.log(`Server running on port ${PORT}`);
+  }
+).on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
     console.log(`Port ${PORT} is already in use, trying a random port...`);
-    // Try listening on a random free port
     server.listen(0, () => {
-      console.log(`Server running on port ${server.address().port}`);
+      const actualPort = server.address().port;
+      console.log(`Server running on port ${actualPort}`);
+      app.get("/backend-config", (req, res) => {
+        res.json({ backendPort: actualPort });
+      });
     });
   } else {
     console.error(err);
@@ -94,5 +105,5 @@ server.listen(PORT, () => {
 });
 
 
-// Export io for use in other modules (e.g. routes) if needed
-module.exports = io;
+
+

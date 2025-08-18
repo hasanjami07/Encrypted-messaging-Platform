@@ -28,23 +28,14 @@ model Contact {
   createdAt DateTime @default(now())
 }
 
-model Message {
-  id           String   @id @map("_id") @default(auto()) @db.ObjectId
-  senderId     String   @db.ObjectId
-  receiverId   String?  @db.ObjectId    // for 1:1 chats (nullable)
-  groupId      String?  @db.ObjectId    // for group messages (nullable)
-  content      String
-  contentLower String?                 // optional: store lowercase copy to enable case-insensitive search
-  iv           String?                 // for encryption iv
-  isUrgent     Boolean  @default(false)
-  createdAt    DateTime @default(now())
-}
-
 model Group {
-  id        String   @id @map("_id") @default(auto()) @db.ObjectId
+  id        String        @id @map("_id") @default(auto()) @db.ObjectId
   name      String
-  createdBy String   @db.ObjectId
-  createdAt DateTime @default(now())
+  createdBy String        @db.ObjectId
+  createdAt DateTime      @default(now())
+
+  members   GroupMember[]
+  messages  Message[]     @relation("GroupMessages")
 }
 
 model GroupMember {
@@ -52,6 +43,20 @@ model GroupMember {
   groupId   String   @db.ObjectId
   userId    String   @db.ObjectId
   joinedAt  DateTime @default(now())
+}
+
+model Message {
+  id           String   @id @map("_id") @default(auto()) @db.ObjectId
+  senderId     String   @db.ObjectId
+  receiverId   String?  @db.ObjectId     // for 1:1 chats
+  groupId      String?  @db.ObjectId     // for group messages
+  content      String
+  contentLower String?
+  iv           String?
+  isUrgent     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  group        Group?   @relation("GroupMessages", fields: [groupId], references: [id])
 }
 
 model SecurityLog {

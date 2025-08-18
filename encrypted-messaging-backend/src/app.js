@@ -8,6 +8,7 @@ const messageRoutes = require("./routes/messageRoutes");
 const scheduledRoutes = require('./routes/scheduledRoutes');
 const contactRoutes = require("./routes/contactRoutes");
 const userRoutes = require("./routes/user.routes");
+const groupRoutes = require('./routes/groupRoutes');
 require('dotenv').config();
 
 
@@ -24,6 +25,7 @@ app.use("/api", messageRoutes);
 app.use("/api/contacts", contactRoutes);
 app.use('/api/scheduled', scheduledRoutes);
 app.use("/api/user", userRoutes);
+app.use('/api/groups', groupRoutes);
 // Test route
 app.get('/', (req, res) => {
   res.send('Encrypted Messaging Backend is running!');

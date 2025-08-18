@@ -4,7 +4,7 @@ const { encrypt, decrypt } = require("../utils/encryption");
 const prisma = require("../prismaClient");
 const io = require("../server"); // assuming you export io from socket.js or similar
 const { verifyToken } = require("../middleware/auth.middleware");
-const { groupId = null, receiverId = null, text } = req.body;
+
 
 // POST /api/messages - Send a message (encrypt and save)
 router.post("/messages", verifyToken, async (req, res) => {
